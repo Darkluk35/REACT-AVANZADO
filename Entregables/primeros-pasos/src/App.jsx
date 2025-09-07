@@ -1,41 +1,43 @@
-import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { ChatProvider, useChat } from "./context/ChatContext";
+import useOllamaHook from "./hooks/useOllamaHook";
+import History from "./components/History";
 import "./App.css";
 
-function App() {
-  const [mensajes, setMensajes] = useState([]);
+function ChatBox() {
+  const { register, handleSubmit, reset } = useForm();
+  const { state, dispatch } = useChat();
+  const { enviarPrompt } = useOllamaHook();
 
-  // Inicializamos el formulario con useForm
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors },
-  } = useForm();
-
-  // Función que se ejecuta al enviar el formulario
-  const enviarMensaje = (data) => {
+  const onSubmit = async (data) => {
     if (!data.mensaje.trim()) return;
 
-    const nuevoMensaje = {
-      text: data.mensaje,
-      sender: "user",
-    };
+    // Agregar mensaje del usuario
+    dispatch({
+      type: "ADD_MESSAGE",
+      payload: { text: data.mensaje, sender: "user" },
+    });
 
-    setMensajes((prev) => [...prev, nuevoMensaje]);
+    // Obtener respuesta de Ollama
+    const respuestaIA = await enviarPrompt(data.mensaje);
 
-    console.log("Enviando Mensaje:", data.mensaje);
+    dispatch({
+      type: "ADD_MESSAGE",
+      payload: { text: respuestaIA, sender: "bot" },
+    });
 
-    // limpiamos el input después de enviar
     reset();
   };
 
   return (
-    <>
-      <div className="flex flex-col h-screen w-full bg-gray-900 text-white justify-end">
-        {/* Sección donde se renderizan los mensajes */}
+    <div className="flex h-screen bg-gray-900 text-white">
+      {/* Panel lateral historial */}
+      <History />
+
+      {/* Chat principal */}
+      <div className="flex flex-col flex-1">
         <div className="flex-1 overflow-y-auto p-4 space-y-2 flex flex-col">
-          {mensajes.map((msg, index) => (
+          {state.mensajes.map((msg, index) => (
             <div
               key={index}
               className={`max-w-xs px-4 py-2 rounded-lg ${
@@ -49,9 +51,8 @@ function App() {
           ))}
         </div>
 
-        {/* Formulario con react-hook-form */}
         <form
-          onSubmit={handleSubmit(enviarMensaje)}
+          onSubmit={handleSubmit(onSubmit)}
           className="p-4 flex items-center bg-gray-800"
         >
           <input
@@ -67,16 +68,15 @@ function App() {
             Enviar
           </button>
         </form>
-
-        {/* Mostrar error si el campo está vacío */}
-        {errors.mensaje && (
-          <p className="text-red-400 text-sm px-4 pb-2">
-            El mensaje no puede estar vacío
-          </p>
-        )}
       </div>
-    </>
+    </div>
   );
 }
 
-export default App;
+export default function App() {
+  return (
+    <ChatProvider>
+      <ChatBox />
+    </ChatProvider>
+  );
+}
