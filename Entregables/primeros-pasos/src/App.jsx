@@ -1,41 +1,82 @@
+import { useState } from "react";
 import { useForm } from "react-hook-form";
-import './App.css'
+import "./App.css";
 
 function App() {
-   const { register, handleSubmit, formState: { errors } } = useForm();
+  const [mensajes, setMensajes] = useState([]);
 
-  const onSubmit = (data) => {
-    console.log(data);
+  // Inicializamos el formulario con useForm
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm();
+
+  // Función que se ejecuta al enviar el formulario
+  const enviarMensaje = (data) => {
+    if (!data.mensaje.trim()) return;
+
+    const nuevoMensaje = {
+      text: data.mensaje,
+      sender: "user",
+    };
+
+    setMensajes((prev) => [...prev, nuevoMensaje]);
+
+    console.log("Enviando Mensaje:", data.mensaje);
+
+    // limpiamos el input después de enviar
+    reset();
   };
 
   return (
     <>
-       <div className="min-h-screen flex justify-center items-center bg-gray-100">
-      <form onSubmit={handleSubmit(onSubmit)} className="bg-white p-6 rounded-xl shadow-lg space-y-4 w-80">
-        <input
-          {...register("nombre", { required: "El nombre es obligatorio" })}
-          placeholder="Nombre"
-          className="w-full border p-2 rounded"
-        />
-        {errors.nombre && <p className="text-red-500">{errors.nombre.message}</p>}
+      <div className="flex flex-col h-screen w-full bg-gray-900 text-white justify-end">
+        {/* Sección donde se renderizan los mensajes */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-2 flex flex-col">
+          {mensajes.map((msg, index) => (
+            <div
+              key={index}
+              className={`max-w-xs px-4 py-2 rounded-lg ${
+                msg.sender === "user"
+                  ? "bg-blue-600 self-end"
+                  : "bg-gray-700 self-start"
+              }`}
+            >
+              {msg.text}
+            </div>
+          ))}
+        </div>
 
-        <input
-          {...register("email", {
-            required: "El correo es obligatorio",
-            pattern: { value: /^\S+@\S+$/i, message: "Correo inválido" }
-          })}
-          placeholder="Correo"
-          className="w-full border p-2 rounded"
-        />
-        {errors.email && <p className="text-red-500">{errors.email.message}</p>}
+        {/* Formulario con react-hook-form */}
+        <form
+          onSubmit={handleSubmit(enviarMensaje)}
+          className="p-4 flex items-center bg-gray-800"
+        >
+          <input
+            type="text"
+            placeholder="Escribe tu mensaje..."
+            className="flex-1 p-2 rounded-lg bg-gray-700 border border-gray-600 text-white focus:outline-none"
+            {...register("mensaje", { required: true })}
+          />
+          <button
+            type="submit"
+            className="ml-2 p-2 bg-blue-600 rounded-lg hover:bg-blue-700"
+          >
+            Enviar
+          </button>
+        </form>
 
-        <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded-xl w-full hover:bg-blue-600">
-          Enviar
-        </button>
-      </form>
-    </div>
+        {/* Mostrar error si el campo está vacío */}
+        {errors.mensaje && (
+          <p className="text-red-400 text-sm px-4 pb-2">
+            El mensaje no puede estar vacío
+          </p>
+        )}
+      </div>
     </>
-  )
+  );
 }
 
-export default App
+export default App;
