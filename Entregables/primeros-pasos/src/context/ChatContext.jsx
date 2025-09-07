@@ -1,31 +1,28 @@
-import { createContext, useReducer, useContext } from "react";
+import { createContext, useState, useContext } from "react";
 
+// 1. Crear el contexto
 const ChatContext = createContext();
 
-const initialState = {
-  mensajes: [],
-};
-
-function chatReducer(state, action) {
-  switch (action.type) {
-    case "ADD_MESSAGE":
-      return { ...state, mensajes: [...state.mensajes, action.payload] };
-    case "CLEAR_HISTORY":
-      return { ...state, mensajes: [] };
-    default:
-      return state;
-  }
-}
-
+// 2. Crear el Provider
 export function ChatProvider({ children }) {
-  const [state, dispatch] = useReducer(chatReducer, initialState);
+  const [mensajes, setMensajes] = useState([]);
+
+  // función para añadir mensajes
+  const addMessage = (msg) => {
+    setMensajes((prev) => [...prev, msg]);
+  };
+
+  // función para limpiar historial
+  const clearHistory = () => setMensajes([]);
+
   return (
-    <ChatContext.Provider value={{ state, dispatch }}>
+    <ChatContext.Provider value={{ mensajes, addMessage, clearHistory }}>
       {children}
     </ChatContext.Provider>
   );
 }
 
+// 3. Crear hook personalizado para consumir el contexto
 export function useChat() {
   return useContext(ChatContext);
 }
